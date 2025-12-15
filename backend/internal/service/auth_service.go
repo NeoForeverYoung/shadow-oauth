@@ -58,8 +58,8 @@ type LoginRequest struct {
 
 // LoginResponse 登录响应结构
 type LoginResponse struct {
-	Token string                `json:"token"` // JWT Token
-	User  models.UserResponse   `json:"user"`  // 用户信息
+	Token string              `json:"token"` // JWT Token
+	User  models.UserResponse `json:"user"`  // 用户信息
 }
 
 // Register 用户注册
@@ -134,9 +134,9 @@ func (s *AuthService) Login(req LoginRequest) (*LoginResponse, error) {
 func (s *AuthService) GenerateToken(userID uint) (string, error) {
 	// 创建 JWT Claims
 	claims := jwt.MapClaims{
-		"user_id": userID,                                  // 用户ID
-		"exp":     time.Now().Add(s.jwtExpire).Unix(),     // 过期时间
-		"iat":     time.Now().Unix(),                      // 签发时间
+		"user_id": userID,                             // 用户ID
+		"exp":     time.Now().Add(s.jwtExpire).Unix(), // 过期时间
+		"iat":     time.Now().Unix(),                  // 签发时间
 	}
 
 	// 创建 Token
@@ -189,4 +189,3 @@ func (s *AuthService) GetUserByID(userID uint) (*models.User, error) {
 	}
 	return &user, nil
 }
-
