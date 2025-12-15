@@ -26,7 +26,12 @@ func main() {
 	defer database.Close()
 
 	// 3. 自动迁移数据库表结构
-	if err := database.AutoMigrate(&models.User{}); err != nil {
+	if err := database.AutoMigrate(
+		&models.User{},
+		&models.OAuthClient{},
+		&models.AuthorizationCode{},
+		&models.AccessToken{},
+	); err != nil {
 		log.Fatalf("数据库迁移失败: %v", err)
 	}
 
@@ -66,9 +71,24 @@ func setupRouter(cfg *config.Config) *gin.Engine {
 
 	// 初始化服务层
 	authService := service.NewAuthService(cfg.JWT.Secret, cfg.JWT.ExpireHours)
+	oauthService := service.NewOAuthService(cfg.JWT.Secret, cfg.JWT.ExpireHours)
 
 	// 初始化处理器
 	authHandler := handlers.NewAuthHandler(authService)
+	oauthHandler := handlers.NewOAuthHandler(oauthService, authService)
+
+	// OAuth 路由组（OAuth 2.0 授权服务器）
+	oauth := router.Group("/oauth")
+	{
+		// 授权端点（需要用户登录）
+		oauth.GET("/authorize", middleware.JWTAuth(authService), oauthHandler.Authorize)
+
+		// Token 端点（公开，但需要客户端密钥）
+		oauth.POST("/token", oauthHandler.Token)
+
+		// 用户信息端点（需要 Access Token）
+		oauth.GET("/userinfo", oauthHandler.UserInfo)
+	}
 
 	// API 路由组
 	api := router.Group("/api")
